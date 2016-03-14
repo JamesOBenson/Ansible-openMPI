@@ -30,6 +30,7 @@ mpirun -v -np 2 --hostfile ~/mpi_hosts /connectivity
 wget http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c
 mpicc hello_c.c -o hello
 mpirun ./hello
+<<<<<<< HEAD
 Output:    
 Hello, world, I am 0 of 1
 
@@ -39,6 +40,14 @@ mpicc connectivity_c.c -o connectivity
 mpirun ./connectivity
 Output:    
 Connectivity test on 1 processes PASSED.
+=======
+Output:    Hello, world, I am 0 of 1
+
+wget http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c
+mpicc connectivity_c.c -o connectivity
+mpirun ./connectivity
+Output:    Connectivity test on 1 processes PASSED.
+>>>>>>> parent of 2dec4c5... MD fix
 
 ### From Community:
 wget http://help.eclipse.org/mars/topic/org.eclipse.ptp.pldt.doc.user/html/samples/testMPI.c
@@ -68,54 +77,40 @@ $ sudo ansible-playbook OpenMPI.yml -t "verify"
 PLAY [OpenMPI Deployment beginning ...] ****************************************
 
 TASK [download hello_c.c from open-mpi.org] ************************************
-
 ok: [x.x.x.x]
 
 TASK [hello world test compile] ************************************************
-
 changed: [x.x.x.x]
 
 TASK [hello world test] ********************************************************
-
 changed: [x.x.x.x]
 
 TASK [debug] *******************************************************************
-
 ok: [x.x.x.x] => {
-
     **"msg": "Hello world success!"**
 }
 
 TASK [debug] *******************************************************************
-
 **skipping: [x.x.x.x]**
 
 TASK [download connectivity_c.c from open.mpi.org] *****************************
-
 ok: [x.x.x.x]
 
 TASK [connectivity compile] ****************************************************
-
 changed: [x.x.x.x]
 
 TASK [Connectivity test] *******************************************************
-
 changed: [x.x.x.x]
 
 TASK [debug] *******************************************************************
-
 ok: [x.x.x.x] => {
-
     **"msg": "Connectivity success!"**
-
 }
 
 TASK [debug] *******************************************************************
-
 **skipping: [x.x.x.x]**
 
 PLAY RECAP *********************************************************************
-
 x.x.x.x               : ok=8    changed=4    unreachable=0    failed=0   
 
 *The skipped debug tasks will notify you if the verification fails.*
