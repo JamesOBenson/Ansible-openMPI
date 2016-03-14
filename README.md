@@ -84,37 +84,28 @@ Or if doing it manually, just write the hosts file and execute.  Be sure to upda
 Your output should be similiar to this when it works:
 $ sudo ansible-playbook OpenMPI.yml -t "verify"
 
-PLAY [OpenMPI Deployment beginning ...] ****************************************
-
-TASK [download hello_c.c from open-mpi.org] ************************************
-
+PLAY [OpenMPI Deployment beginning ...] ***************************************
+TASK [download hello_c.c from open-mpi.org] ***********************************
 ok: [x.x.x.x]
 
-TASK [hello world test compile] ************************************************
-
+TASK [hello world test compile] ***********************************************
 changed: [x.x.x.x]
 
-TASK [hello world test] ********************************************************
-
+TASK [hello world test] *******************************************************
 changed: [x.x.x.x]
 
-TASK [debug] *******************************************************************
-
+TASK [debug] ******************************************************************
 ok: [x.x.x.x] => {
-
     **"msg": "Hello world success!"**
 }
 
-TASK [debug] *******************************************************************
-
+TASK [debug] ******************************************************************
 **skipping: [x.x.x.x]**
 
-TASK [download connectivity_c.c from open.mpi.org] *****************************
-
+TASK [download connectivity_c.c from open.mpi.org] ****************************
 ok: [x.x.x.x]
 
-TASK [connectivity compile] ****************************************************
-
+TASK [connectivity compile] ***************************************************
 changed: [x.x.x.x]
 
 TASK [Connectivity test] *******************************************************
