@@ -1,0 +1,172 @@
+---
+#
+# Copyright 2016 James Benson
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+- hosts: defaultVM
+  user: ubuntu
+  become: yes
+  vars:
+    TEMP_LOCATION: /tmp/openmpi
+    FINAL_LOCATION: /home/ubuntu
+  name: OpenMPI Deployment beginning ...
+  tasks:
+     
+  - name: Update ubuntu ...
+    apt: update_cache=yes
+    tags:
+      - easy
+      - latest
+
+  - name: Install required packages ...
+    apt: name=build-essential
+    tags:
+      - easy
+      - latest
+
+  - name: Install openmpi v1.6.5 ...
+    apt: name={{ item }} state=present
+    with_items:
+      - openmpi-bin
+      - openmpi-doc
+      - libopenmpi-dev
+    tags:
+      - easy
+
+  - name: Install necessary packages for openstack v1.10.2 ...
+    apt: name={{ item }} state=present
+    with_items:
+      - libibnetdisc-dev
+    tags:
+      - latest
+
+  - name: create temp directory ...
+    file: path={{ TEMP_LOCATION }} state=directory mode=0755
+    tags:
+      - latest
+
+  - name: Untar OpenMPI ...
+    unarchive:
+      src: http://www.open-mpi.org/software/ompi/v1.10/downloads/openmpi-1.10.2.tar.gz
+      dest: "{{ TEMP_LOCATION }}"
+      copy: no
+    tags:
+      - latest
+
+  - name: Running the ./configure for OpenMPI (Please be patient) ...
+    command: "{{ item }}"
+    args:
+      chdir: "{{ TEMP_LOCATION }}/openmpi-1.10.2"
+    with_items:
+      - ./configure --prefix='{{ FINAL_LOCATION }}/.openmpi'
+    tags:
+      - latest
+  
+  - name: Running the "make" for OpenMPI (Please be patient) ...
+    command: "{{ item }}"
+    args:
+      chdir: "{{ TEMP_LOCATION }}/openmpi-1.10.2"
+    with_items:
+      - make
+    tags:
+      - latest
+
+  - name: Running the "make install" for OpenMPI (Please be patient) ...
+    command: make install
+    args:
+      chdir: "{{ TEMP_LOCATION }}/openmpi-1.10.2"
+    tags:
+      - latest
+
+  - name: Adding the path in the bashrc files
+    lineinfile: >
+      dest="{{ FINAL_LOCATION }}/.bashrc"
+      line='export PATH="$PATH:{{ FINAL_LOCATION }}/.openmpi/bin"' 
+      insertafter='EOF' 
+      state=present
+    tags:
+      - latest
+
+  - name: Adding the path in the bashrc files
+    lineinfile: >
+      dest="{{ FINAL_LOCATION }}/.bashrc"
+      line='export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:{{ FINAL_LOCATION }}/.openmpi/lib/"' 
+      insertafter='EOF' 
+      state=present
+    tags:
+      - latest
+
+  - name: download hello_c.c from open-mpi.org
+    get_url:
+      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c       dest="{{ FINAL_LOCATION }}/hello_c.c"
+    tags:
+      - verify
+      - always
+
+  - name: hello world test compile
+    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/hello_c.c -o {{ FINAL_LOCATION }}/hello"
+    tags:
+      - verify
+      - always
+
+  - name: hello world test
+    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpirun --allow-run-as-root {{ FINAL_LOCATION }}/hello"
+    register: world
+    tags:
+      - verify
+      - always
+
+  - debug: msg="Hello world success!"
+    when: "'Hello, world, I am 0 of 1' in world.stdout_lines"
+    tags:
+      - verify
+      - always
+
+  - debug: msg="WARNING - Hello world success!"
+    when: "'Hello, world, I am 0 of 1' not in world.stdout_lines"
+    tags:
+      - verify
+      - always
+
+  - name: download connectivity_c.c from open.mpi.org
+    get_url:
+      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c     dest={{ FINAL_LOCATION }}/connectivity_c.c
+    tags:
+      - verify
+      - always
+
+  - name: connectivity compile
+    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/connectivity_c.c -o {{ FINAL_LOCATION }}/connectivity"
+    tags:
+      - verify
+      - always
+
+  - name: Connectivity test
+    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpirun --allow-run-as-root {{ FINAL_LOCATION }}/connectivity"
+    register: connectivity
+    tags:
+      - verify
+      - always
+
+  - debug: msg="Connectivity success!"
+    when: "'Connectivity test on 1 processes PASSED.' in connectivity.stdout_lines"
+    tags:
+      - verify
+      - always
+
+  - debug: msg="WARNING - Connectivity failure!"
+    when: "'Connectivity test on 1 processes PASSED.' not in connectivity.stdout_lines"
+    tags:
+      - verify
+      - always
