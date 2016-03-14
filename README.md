@@ -28,30 +28,22 @@ mpirun -v -np 2 --hostfile ~/mpi_hosts /connectivity
 ##To verify installation manually:
 ### From Open-mpi.org
 wget http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c
-
 mpicc hello_c.c -o hello
-
 mpirun ./hello
-
 Output:    
 Hello, world, I am 0 of 1
 
+
 wget http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c
-
 mpicc connectivity_c.c -o connectivity
-
 mpirun ./connectivity
-
 Output:    
 Connectivity test on 1 processes PASSED.
 
 ### From Community:
 wget http://help.eclipse.org/mars/topic/org.eclipse.ptp.pldt.doc.user/html/samples/testMPI.c
-
 mpicc -o testMPI testMPI.c
-
 mpirun -np 4 testMPI
-
 Output:
     Hello MPI World the original.
     Hello MPI World the original.
