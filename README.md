@@ -7,23 +7,47 @@ This script is designed to use Ansible to deploy either the repository version (
 * hosts file
 
 ##How to execute
-- Verify that correct temperary directory to download, compile and install OpenMPI
+If you want to run OpenMPI 1.10.2:
+- Verify the correct temperary directory to download, compile and install OpenMPI 
 - Verify the correct destination path for the end user to be updated.
 
-Execute using: 
+**Execute using:**
+
  * for 1.6.5: ```ansible-playbook OpenMPI.yml -t easy```
  * for 1.10.2: ```ansible-playbook OpenMPI.yml -t latest```
  * To verify installation only: ```ansible-playbook OpenMPI.yml -t verify```
 
 
+**General Workflow:**
+
+1. Updates Ubuntu
+2. Installs required packages and pip packages
+3. Disable Strict Host Key Checking in SSH Config
+4. Start Install
+
+    Easy Install:
+
+    1. Installs repository packages for OpenMPI 1.6.5 
+
+    Latest Install:
+    
+    1. Configure/Makes/Make Install OpenMPI 1.10.2
+    2. Adds lines to bashrc
+
+5. Runs verifications
+
 ##Some helpful command:
 To verify version:
 ```ompi_info | grep 'Open MPI:' | awk '{print $3}'```
 
-To run with multiple servers and verify connectivity:
+To run with 2 nodes and verify connectivity:
 ```
 echo <Your Server IP's> >> mpi_hosts 
-mpirun -v -np 2 --hostfile ~/mpi_hosts /connectivity
+mpirun -np 2 -machinefile mpi_hosts connectivity
+```
+To run the HelloWorld.py on 2 nodes:
+```
+mpirun -np 2 -machinefile mpi_hosts python HelloWorld.py 
 ```
 
 ##To verify installation manually:
@@ -73,7 +97,7 @@ If using something like Openstack, once successfully deployed, a user can snapsh
 
 Or if doing it manually, just write the hosts file and execute.  Be sure to update the "np" to the number of servers you are running it across.
 
-``` mpirun -v -np 2 --hostfile ~/mpi_hosts /connectivity```
+``` mpirun -np 2 -machinefile mpi_hosts connectivity```
 
 
 ##Notes about verification:

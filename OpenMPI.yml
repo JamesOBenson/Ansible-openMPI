@@ -14,7 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-- hosts: defaultVM
+- hosts: all
   user: ubuntu
   become: yes
   vars:
@@ -30,7 +30,34 @@
       - latest
 
   - name: Install required packages ...
-    apt: name=build-essential
+    apt: name={{ item }} state=present
+    with_items:
+     - build-essential
+     - python-dev
+     - python-pip
+    tags:
+      - easy
+      - latest
+
+  - name: Install python packages for MPI
+    pip: name= {{ item }} state=present
+    with_items:
+      - numpy
+      - scipy
+      - matplotlib
+      - pandas
+      - nose
+      - pylint
+    tags:
+      - easy
+      - latest
+
+  - name: Disable Strict Host Key Checking in SSH Config
+    lineinfile: >
+      dest=/etc/ssh/ssh_config
+      line="StrictHostKeyChecking no" 
+      insertafter='EOF' 
+      state=present
     tags:
       - easy
       - latest
@@ -41,8 +68,11 @@
       - openmpi-bin
       - openmpi-doc
       - libopenmpi-dev
+      - openmpi-checkpoint
+      - openmpi-common
     tags:
       - easy
+
 
   - name: Install necessary packages for openstack v1.10.2 ...
     apt: name={{ item }} state=present
@@ -51,7 +81,7 @@
     tags:
       - latest
 
-  - name: create temp directory ...
+  - name: Create temp directory ...
     file: path={{ TEMP_LOCATION }} state=directory mode=0755
     tags:
       - latest
@@ -107,20 +137,20 @@
     tags:
       - latest
 
-  - name: download hello_c.c from open-mpi.org
+  - name: Download hello_c.c from open-mpi.org
     get_url:
       url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c       dest="{{ FINAL_LOCATION }}/hello_c.c"
     tags:
       - verify
       - always
 
-  - name: hello world test compile
+  - name: Compiling Hello world test ...
     shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/hello_c.c -o {{ FINAL_LOCATION }}/hello"
     tags:
       - verify
       - always
 
-  - name: hello world test
+  - name: Running Hello world test ...
     shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpirun --allow-run-as-root {{ FINAL_LOCATION }}/hello"
     register: world
     tags:
@@ -139,14 +169,14 @@
       - verify
       - always
 
-  - name: download connectivity_c.c from open.mpi.org
+  - name: Download connectivity_c.c from open.mpi.org
     get_url:
       url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c     dest={{ FINAL_LOCATION }}/connectivity_c.c
     tags:
       - verify
       - always
 
-  - name: connectivity compile
+  - name: Connectivity compile
     shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/connectivity_c.c -o {{ FINAL_LOCATION }}/connectivity"
     tags:
       - verify
@@ -167,6 +197,22 @@
 
   - debug: msg="WARNING - Connectivity failure!"
     when: "'Connectivity test on 1 processes PASSED.' not in connectivity.stdout_lines"
+    tags:
+      - verify
+      - always
+
+  - name: Transfer HelloWorld.py file
+    get_url:
+      url=https://raw.githubusercontent.com/JamesOBenson/openMPI/master/HelloWorld.py
+      dest={{ FINAL_LOCATION }}/HelloWorld.py
+    tags:
+      - verify
+      - always
+
+  - name: Transfer mpi_pi.py file
+    get_url:
+      url=https://raw.githubusercontent.com/JamesOBenson/openMPI/master/mpi_pi.py
+      dest={{ FINAL_LOCATION }}/mpi_pi.py
     tags:
       - verify
       - always
