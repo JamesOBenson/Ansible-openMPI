@@ -20,7 +20,7 @@
   vars:
     TEMP_LOCATION: /tmp/openmpi
     FINAL_LOCATION: /opt/openmpi-1.10.2
-    DEBUG_LOCATION: /tmp/openMPI
+    DEBUG_LOCATION: /tmp/openMPI-examples
   name: OpenMPI Deployment beginning ...
   tasks:
      
@@ -171,28 +171,11 @@
     tags:
       - latest
 
-  - name: Adding the path in the bashrc files
-    lineinfile: >
-      dest="{{ FINAL_LOCATION }}/.bashrc"
-      line='export PATH="$PATH:{{ FINAL_LOCATION }}/.openmpi/bin"' 
-      insertafter='EOF' 
-      state=present
-    tags:
-      - latest
-
-  - name: Adding the path in the bashrc files
-    lineinfile: >
-      dest="{{ FINAL_LOCATION }}/.bashrc"
-      line='export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:{{ FINAL_LOCATION }}/.openmpi/lib/"' 
-      insertafter='EOF' 
-      state=present
-    tags:
-      - latest
-
   - name: Create verification directory ...
     file: path="{{ DEBUG_LOCATION }}" state=directory mode=0755
     tags:
       - always
+      - verify
 
   - name: Download hello_c.c from open-mpi.org
     get_url:
