@@ -14,12 +14,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-- hosts: all
+- hosts: testgroup
   user: ubuntu
   become: yes
   vars:
     TEMP_LOCATION: /tmp/openmpi
-    FINAL_LOCATION: /home/ubuntu
+    FINAL_LOCATION: /opt/openmpi-1.10.2
+    DEBUG_LOCATION: /tmp/openMPI
   name: OpenMPI Deployment beginning ...
   tasks:
      
@@ -35,6 +36,8 @@
      - build-essential
      - python-dev
      - python-pip
+     - python-mpi4py
+     - python3-mpi4py
     tags:
       - easy
       - latest
@@ -73,6 +76,17 @@
     tags:
       - easy
 
+  - name: Remove openmpi v1.6.5 ...
+    apt: name={{ item }} state=absent purge=yes
+    with_items:
+      - openmpi-bin
+      - openmpi-doc
+      - libopenmpi-dev
+      - openmpi-checkpoint
+      - openmpi-common
+    tags:
+      - latest
+
 
   - name: Install necessary packages for openstack v1.10.2 ...
     apt: name={{ item }} state=present
@@ -85,6 +99,11 @@
     file: path={{ TEMP_LOCATION }} state=directory mode=0755
     tags:
       - latest
+
+  - name: Create final directory ...
+    file: path={{ FINAL_LOCATION }} state=directory
+    tags:
+      - always
 
   - name: Untar OpenMPI ...
     unarchive:
@@ -99,7 +118,7 @@
     args:
       chdir: "{{ TEMP_LOCATION }}/openmpi-1.10.2"
     with_items:
-      - ./configure --prefix='{{ FINAL_LOCATION }}/.openmpi'
+      - ./configure --prefix='{{ FINAL_LOCATION }}'
     tags:
       - latest
   
@@ -116,6 +135,39 @@
     command: make install
     args:
       chdir: "{{ TEMP_LOCATION }}/openmpi-1.10.2"
+    tags:
+      - latest
+
+  - name: Create Symbolic links
+    file: 
+      src="{{ FINAL_LOCATION }}/bin/{{ item }}"
+      dest=/usr/local/bin/{{ item }}
+      state=link
+    with_items:
+      - mpic++
+      - mpicc
+      - mpiCC
+      - mpicc-vt
+      - mpiCC-vt
+      - mpic++-vt
+      - mpicxx
+      - mpicxx-vt
+      - mpiexec
+      - mpif77
+      - mpif77-vt
+      - mpif90
+      - mpif90-vt
+      - mpifort
+      - mpifort-vt
+      - mpirun
+    tags:
+      - latest
+
+  - name: Install python packages ...
+    apt: name={{ item }} state=present
+    with_items:
+     - python-mpi4py
+     - python3-mpi4py
     tags:
       - latest
 
@@ -137,22 +189,28 @@
     tags:
       - latest
 
+  - name: Create verification directory ...
+    file: path="{{ DEBUG_LOCATION }}" state=directory mode=0755
+    tags:
+      - always
+
   - name: Download hello_c.c from open-mpi.org
     get_url:
-      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c       dest="{{ FINAL_LOCATION }}/hello_c.c"
+      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/hello_c.c       dest="{{ DEBUG_LOCATION }}/hello_c.c"
     tags:
       - verify
       - always
 
   - name: Compiling Hello world test ...
-    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/hello_c.c -o {{ FINAL_LOCATION }}/hello"
+    shell: mpicc {{ DEBUG_LOCATION }}/hello_c.c -o {{ DEBUG_LOCATION }}/hello
     tags:
       - verify
       - always
 
   - name: Running Hello world test ...
-    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpirun --allow-run-as-root {{ FINAL_LOCATION }}/hello"
+    shell: mpirun {{ DEBUG_LOCATION }}/hello
     register: world
+    become: no
     tags:
       - verify
       - always
@@ -171,20 +229,21 @@
 
   - name: Download connectivity_c.c from open.mpi.org
     get_url:
-      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c     dest={{ FINAL_LOCATION }}/connectivity_c.c
+      url=http://svn.open-mpi.org/svn/ompi/tags/v1.6-series/v1.6.4/examples/connectivity_c.c     dest={{ DEBUG_LOCATION }}/connectivity_c.c
     tags:
       - verify
       - always
 
   - name: Connectivity compile
-    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpicc {{ FINAL_LOCATION }}/connectivity_c.c -o {{ FINAL_LOCATION }}/connectivity"
+    shell: mpicc {{ DEBUG_LOCATION }}/connectivity_c.c -o {{ DEBUG_LOCATION }}/connectivity
     tags:
       - verify
       - always
 
   - name: Connectivity test
-    shell: "{{ FINAL_LOCATION }}/.openmpi/bin/mpirun --allow-run-as-root {{ FINAL_LOCATION }}/connectivity"
+    shell: mpirun {{ DEBUG_LOCATION }}/connectivity
     register: connectivity
+    become: no
     tags:
       - verify
       - always
@@ -204,7 +263,7 @@
   - name: Transfer HelloWorld.py file
     get_url:
       url=https://raw.githubusercontent.com/JamesOBenson/openMPI/master/HelloWorld.py
-      dest={{ FINAL_LOCATION }}/HelloWorld.py
+      dest={{ DEBUG_LOCATION }}/HelloWorld.py
     tags:
       - verify
       - always
@@ -212,7 +271,18 @@
   - name: Transfer mpi_pi.py file
     get_url:
       url=https://raw.githubusercontent.com/JamesOBenson/openMPI/master/mpi_pi.py
-      dest={{ FINAL_LOCATION }}/mpi_pi.py
+      dest={{ DEBUG_LOCATION }}/mpi_pi.py
+    tags:
+      - verify
+      - always
+
+  - name: Transfer mpi_hosts file
+    copy: 
+      src: "mpi_hosts"
+      dest: "{{ DEBUG_LOCATION }}/mpi_hosts"
+      owner: ubuntu
+      group: admin
+      mode: 0666
     tags:
       - verify
       - always

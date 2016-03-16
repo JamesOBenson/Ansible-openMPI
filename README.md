@@ -99,6 +99,7 @@ Or if doing it manually, just write the hosts file and execute.  Be sure to upda
 
 ``` mpirun -np 2 -machinefile mpi_hosts connectivity```
 
+Also, don't forget you need to have your private keys loaded on the machines to be able to SSH back and forth between for MPI to work properly.
 
 ##Notes about verification:
 Your output should be similiar to this when it works:
