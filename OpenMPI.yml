@@ -103,7 +103,7 @@
   - name: Create final directory ...
     file: path={{ FINAL_LOCATION }} state=directory
     tags:
-      - always
+      - latest
 
   - name: Untar OpenMPI ...
     unarchive:
